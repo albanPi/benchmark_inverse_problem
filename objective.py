@@ -5,6 +5,7 @@ from benchopt import BaseObjective, safe_import_context
 # - getting requirements info when all dependencies are not installed.
 with safe_import_context() as import_ctx:
     import numpy as np
+    from modopt.math.metrics import ssim
 
 
 # The benchmark objective must be named `Objective` and
@@ -12,7 +13,7 @@ with safe_import_context() as import_ctx:
 class Objective(BaseObjective):
 
     # Name to select the objective in the CLI and to display the results.
-    name = "Ordinary Least Squares"
+    name = "Inverse problem"
 
     # URL of the main repo for this benchmark.
     url = "https://github.com/albanPi/benchmark_inverse_problem"
@@ -32,34 +33,30 @@ class Objective(BaseObjective):
     # solvers or datasets should be declared in Dataset or Solver (see
     # simulated.py and python-gd.py).
     # Example syntax: requirements = ['numpy', 'pip:jax', 'pytorch:pytorch']
-    requirements = ["numpy"]
+    requirements = ["numpy", "pip:modopt" "pip:mri-nufft", "matplotlib", "pandas", "pip:h5py"]
 
     # Minimal version of benchopt required to run this benchmark.
     # Bump it up if the benchmark depends on a new feature of benchopt.
     min_benchopt_version = "1.5"
 
-    def set_data(self, X, y):
+    def set_data(self, kspace, foperator, gt):
         # The keyword arguments of this function are the keys of the dictionary
         # returned by `Dataset.get_data`. This defines the benchmark's
         # API to pass data. This is customizable for each benchmark.
-        self.X, self.y = X, y
+        self.kspace, self.foperator, self.gt = kspace, foperator, gt
 
-        # `set_data` can be used to preprocess the data. For instance,
-        # if `whiten_y` is True, remove the mean of `y`.
-        if self.whiten_y:
-            y -= y.mean(axis=0)
+        # `set_data` can be used to preprocess the data.
 
     def evaluate_result(self, beta):
         # The keyword arguments of this function are the keys of the
         # dictionary returned by `Solver.get_result`. This defines the
         # benchmark's API to pass solvers' result. This is customizable for
         # each benchmark.
-        diff = self.y - self.X @ beta
 
         # This method can return many metrics in a dictionary. One of these
         # metrics needs to be `value` for convergence detection purposes.
         return dict(
-            value=.5 * diff @ diff,
+            structure=ssim(beta, self.image)
         )
 
     def get_one_result(self):
@@ -74,6 +71,7 @@ class Objective(BaseObjective):
         # benchmark's API for passing the objective to the solver.
         # It is customizable for each benchmark.
         return dict(
-            X=self.X,
-            y=self.y,
+            kspace=self.kspace,
+            foperator=self.foperator,
+            gt=self.gt,
         )
