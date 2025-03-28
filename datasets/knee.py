@@ -32,9 +32,10 @@ class Dataset(BaseDataset):
         # The return arguments of this function are passed as keyword arguments
         # to `Objective.set_data`. This defines the benchmark's
         # API to pass data. It is customizable for each benchmark.
-        image = hp.File("/home/albqn/Documents/CPGE/TIPE/benchmark_inverse_problem/datasets/") # ground truth image
+        
         fichier = hp.File("/home/albqn/Documents/CPGE/TIPE/benchmark_inverse_problem/datasets/file1000311.h5", 'r')
         rss = fichier['reconstruction_rss'][20]
+        image = rss # ground truth image
         samples_loc = mrinufft.initialize_2D_radial(Nc=640, Ns=544) # voir le header
         density = mrinufft.density.voronoi(samples_loc) # améliore la qualité de l'image, savoir expliquer
         NufftOperator = mrinufft.get_operator("finufft") # choix du backend

@@ -5,10 +5,12 @@ from benchopt import BaseSolver, safe_import_context
 # - getting requirements info when all dependencies are not installed.
 with safe_import_context() as import_ctx:
     import numpy as np
+    import optuna 
     from mri.operators import WaveletUD2
     from mri.reconstructors import SingleChannelReconstructor
     from modopt.opt.proximity import SparseThreshold
     from modopt.opt.linear import Identity
+    from modopt.math.metrics import ssim
 
 # The benchmark solvers must be named `Solver` and
 # inherit from `BaseSolver` for `benchopt` to work properly.
@@ -29,7 +31,7 @@ class Solver(BaseSolver):
 
     # List of packages needed to run the solver. See the corresponding
     # section in objective.py
-    requirements = ["pip:pysap-python", "pip:modopt"]
+    requirements = ["pip:pysap-python", "pip:modopt", "pip:optuna"]
 
     def set_objective(self, kspace, foperator, gt):
         # Define the information received by each solver from the objective.
@@ -47,20 +49,30 @@ class Solver(BaseSolver):
             gradient_formulation='synthesis',
             verbose=1,
         )
-        
+
+    def objective(self, trial):
+        param = trial.suggest_int("num_iterations", 50, 300, step=50)
+        beta, costs, metrics = self.reconstructor.reconstruct(
+            kspace_data = self.kspace,
+            optimization_alg = 'fista',
+            num_iterations = param,
+        )
+        return ssim(beta, self.gt)
 
     def run(self):
         # This is the function that is called to evaluate the solver.
         # It runs the algorithm for a given a number of iterations `n_iter`.
         # You can also use a `tolerance` or a `callback`, as described in
         # https://benchopt.github.io/performance_curves.html
+        sampler = optuna.samplers.RandomSampler()
         image, costs, metrics = self.reconstructor.reconstruct(
             kspace_data=self.kspace,
             optimization_alg='fista',
             num_iterations=200,
         )  
-        self.beta = image
-
+        study = optuna.create_study(direction="maximise", sampler=sampler)
+        study.optimize(self.objective, n_trials=10)
+        self.best_iter = study.best_params.params
         
 
     def get_result(self):
@@ -69,4 +81,9 @@ class Solver(BaseSolver):
         # keyword arguments for `Objective.evaluate_result`
         # This defines the benchmark's API for solvers' results.
         # it is customizable for each benchmark.
-        return dict(beta=self.beta)
+        beta, costs, metrics = self.reconstructor.reconstruct(
+            kspace_data=self.kspace,
+            optimization_alg='fista',
+            num_iterations=self.best_iter["num_iterations"],
+        )
+        return dict(beta=beta)

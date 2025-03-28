@@ -56,7 +56,7 @@ class Objective(BaseObjective):
         # This method can return many metrics in a dictionary. One of these
         # metrics needs to be `value` for convergence detection purposes.
         return dict(
-            structure=ssim(beta, self.image)
+            structure=ssim(beta, self.gt)
         )
 
     def get_one_result(self):
