@@ -5,12 +5,13 @@ from benchopt import BaseSolver, safe_import_context
 # - getting requirements info when all dependencies are not installed.
 with safe_import_context() as import_ctx:
     import numpy as np
-    import optuna 
+    import optuna
     from mri.operators import WaveletUD2
     from mri.reconstructors import SingleChannelReconstructor
     from modopt.opt.proximity import SparseThreshold
     from modopt.opt.linear import Identity
     from modopt.math.metrics import ssim
+
 
 # The benchmark solvers must be named `Solver` and
 # inherit from `BaseSolver` for `benchopt` to work properly.
@@ -53,9 +54,9 @@ class Solver(BaseSolver):
     def objective(self, trial):
         param = trial.suggest_int("num_iterations", 50, 300, step=50)
         beta, costs, metrics = self.reconstructor.reconstruct(
-            kspace_data = self.kspace,
-            optimization_alg = 'fista',
-            num_iterations = param,
+            kspace_data=self.kspace,
+            optimization_alg='fista',
+            num_iterations=param,
         )
         return ssim(beta, self.gt)
 
@@ -69,11 +70,10 @@ class Solver(BaseSolver):
             kspace_data=self.kspace,
             optimization_alg='fista',
             num_iterations=200,
-        )  
+        )
         study = optuna.create_study(direction="maximise", sampler=sampler)
         study.optimize(self.objective, n_trials=10)
         self.best_iter = study.best_params.params
-        
 
     def get_result(self):
         # Return the result from one optimization run.

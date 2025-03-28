@@ -6,8 +6,6 @@ from benchopt import BaseDataset, safe_import_context
 # - getting requirements info when all dependencies are not installed.
 with safe_import_context() as import_ctx:
     import h5py as hp
-    import pandas as pd
-    import matplotlib.pyplot as plt
     import mrinufft
 
 
@@ -32,16 +30,26 @@ class Dataset(BaseDataset):
         # The return arguments of this function are passed as keyword arguments
         # to `Objective.set_data`. This defines the benchmark's
         # API to pass data. It is customizable for each benchmark.
-        
-        fichier = hp.File("/home/albqn/Documents/CPGE/TIPE/benchmark_inverse_problem/datasets/file1000311.h5", 'r')
+        fichier = hp.File(
+            "/home/albqn/Documents/CPGE/TIPE/benchmark_inverse_problem/datasets/file1000311.h5", 
+            'r'
+        )
         rss = fichier['reconstruction_rss'][20]
-        image = rss # ground truth image
-        samples_loc = mrinufft.initialize_2D_radial(Nc=640, Ns=544) # voir le header
-        density = mrinufft.density.voronoi(samples_loc) # améliore la qualité de l'image, savoir expliquer
-        NufftOperator = mrinufft.get_operator("finufft") # choix du backend
-        nufft = NufftOperator(samples_loc, shape=(320, 320), n_coils=1,
-        density=density) # idem voir le header
+        image = rss  # ground truth image
+        samples_loc = mrinufft.initialize_2D_radial(  # voir le header
+            Nc=640, Ns=544
+        )
+        density = mrinufft.density.voronoi(  # ameliore la qualité 
+            samples_loc
+        )
+        NufftOperator = mrinufft.get_operator("finufft")  # choix du backend
+        nufft = NufftOperator(  # idem voir le header
+            samples_loc,
+            shape=(320, 320),
+            n_coils=1,
+            density=density
+        )
         kspace_non_cartesien = nufft.op(rss)
 
-        # The dictionary defines the keyword arguments for `Objective.set_data`
+        # dict defines  keyword arguments for `Objective.set_data`
         return dict(kspace=kspace_non_cartesien, foperator=nufft, gt=image)

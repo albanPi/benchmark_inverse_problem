@@ -33,7 +33,7 @@ class Objective(BaseObjective):
     # solvers or datasets should be declared in Dataset or Solver (see
     # simulated.py and python-gd.py).
     # Example syntax: requirements = ['numpy', 'pip:jax', 'pytorch:pytorch']
-    requirements = ["numpy", "pip:modopt" "pip:mri-nufft", "matplotlib", "pandas", "pip:h5py"]
+    requirements = ["pip:modopt", "pip:mri-nufft", "pip:h5py"]
 
     # Minimal version of benchopt required to run this benchmark.
     # Bump it up if the benchmark depends on a new feature of benchopt.
